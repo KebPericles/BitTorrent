@@ -1,6 +1,6 @@
-/* BitWelcomer.java:  runnable class to welcome incoming BitTorrent peers */
-/* main purpose is to provide non-blocking acceptance of new peers */
-/* Christopher Chute */
+/* BitWelcomer.java: clase ejecutable para dar la bienvenida a los pares entrantes de BitTorrent */
+/* El objetivo principal es proporcionar la aceptación sin bloqueo de nuevos compañeros */
+
 
 import java.net.Socket;
 import java.net.ServerSocket;
@@ -9,8 +9,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 
 public class BitWelcomer extends Thread {
-    private ServerSocket welcomeSocket = null;  // welcome new peers
-    private LinkedList<Socket> welcomeQ = null; // pending new peers
+    private ServerSocket welcomeSocket = null;  // Bienvenida a nuevos peers
+    private LinkedList<Socket> welcomeQ = null; // Nuevos peers pendientes
     private volatile boolean isStopped = false;
 
     public BitWelcomer(int welcomePort, final LinkedList<Socket> welcomeQ) {
@@ -29,7 +29,7 @@ public class BitWelcomer extends Thread {
         isStopped = true;
     }
 
-    /* run:  continually loop to accept new BitTorrent peers */
+    /* ejecutar: bucle continuamente para aceptar nuevos pares de BitTorrent */
     public void run() {
         while (!isStopped) {
             Socket peerSocket = null;

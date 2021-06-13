@@ -1,20 +1,19 @@
-/* BitMessage.java:  for constructing and parsing BitTorrent messages */
-/* Christopher Chute */
+/* BitMessage.java: para construir y analizar mensajes BitTorrent   */
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class BitMessage {
     private static final int INTEGER_LENGTH = 4;
-    /* Unpacked Message: info about the contents of the message payload */
-    private MessageType type;      // type of BitMessage, cf. client protocol
-    private int blockLength = -1;  // length of a requested block
-    private int index = -1;        // index of piece containing requested block
-    private int begin = -1;        // offset within piece of a requested block
-    private byte[] block = null;   // block data itself, contiguous subset of a piece
-    private byte[] bitfield = null;// for bitfield message
+    /* Unpacked Message: información sobre el contenido de la carga útil del mensaje*/
+    private MessageType type;      // tipo de BitMessage, cf. protocolo de cliente
+    private int blockLength = -1;  // longitud de un bloque solicitado
+    private int index = -1;        // índice de pieza que contiene el bloque solicitado
+    private int begin = -1;        // desplazamiento dentro de una pieza de un bloque solicitado
+    private byte[] block = null;   // bloque de datos en sí, subconjunto contiguo de una pieza
+    private byte[] bitfield = null;// para mensaje de campo de bits
 
-    /* MessageType: all possible message types in client protocol */
+    /* MessageType: todos los tipos de mensajes posibles en el protocolo del cliente */
     public enum MessageType {
         KEEP_ALIVE,
         CHOKE,
@@ -28,26 +27,26 @@ public class BitMessage {
         CANCEL
     }
 
-    /* BitMessage(MessageType): constructor for messages with no payload */
+    /* BitMessage(MessageType):constructor para mensajes sin carga útil  */
     /* MessageType: KEEP_ALIVE, CHOKE, UNCHOKE, INTERESTED, UNINTERESTED */
     public BitMessage(MessageType type) {
         this.type = type;
     }
 
-    /* BitMessage(MessageType, int): constructor for a HAVE message */
+    /* BitMessage(MessageType, int): contructor para un mensaje HAVE*/
     public BitMessage(MessageType type, int index) {
         this.type = type;
         this.index = index;
     }
 
-    /* BitMessage(MessageType, byte[]): constructor for a BITFIELD message */
+    /* BitMessage(MessageType, byte[]): constructor para un mensaje BITFIELD  */
     public BitMessage(MessageType type, byte[] bitfield) {
         this.type = type;
         this.bitfield = bitfield;
     }
 
-    /* BitMessage(MessageType, int, int, int): block transfer msgs */
-    /* MessageType: REQUEST or CANCEL */
+    /* BitMessage(MessageType, int, int, int): bloquear mensajes de transferencia */
+    /* MessageType: REQUEST o CANCEL */
     public BitMessage(MessageType type, int index, int begin, int blockLength) {
         this.type = type;
         this.index = index;
@@ -55,7 +54,7 @@ public class BitMessage {
         this.blockLength = blockLength;
     }
 
-    /* BitMessage(MessageType, int, int, byte[]): block transfer msgs */
+    /* BitMessage(MessageType, int, int, byte[]): bloquear mensajes de transferencia */
     /* MessageType: PIECE */
     public BitMessage(MessageType type, int index, int begin, byte[] block) {
         this.type = type;
@@ -94,7 +93,7 @@ public class BitMessage {
         return bitfield;
     }
 
-    /* pack: packs a message into a byte[] to send over network */
+    /* pack:empaqueta un mensaje en un byte [] para enviarlo a través de la red */
     public byte[] pack() {
         ByteBuffer buf = null;
 
@@ -160,7 +159,7 @@ public class BitMessage {
             buf.putInt(index);
             buf.putInt(begin);
             buf.putInt(blockLength);
-        // NOTE: Full BitTorrent protocol has another PORT message type
+        // NOTA:El protocolo completo de BitTorrent tiene otro tipo de mensaje PORT
         } else {
             throw new RuntimeException("Unrecognized BitMessage type: " + type);
         }
@@ -171,12 +170,12 @@ public class BitMessage {
         return null;
     }
 
-    /* unpack: turns received byte[] into the corresponding BitMessage */
+    /* unpack: convierte el byte recibido [] en el BitMessage correspondiente*/
     public static BitMessage unpack(byte[] message) {
         ByteBuffer buf = ByteBuffer.wrap(message);
         int len = buf.getInt();
 
-        // handle KEEP_ALIVE message
+        // manejar el mensaje KEEP_ALIVE
         if (len == 0) {
             return new BitMessage(MessageType.KEEP_ALIVE);
         }
@@ -185,7 +184,7 @@ public class BitMessage {
         buf.get(t, 0, 1);
         String typeStr = new String(t, StandardCharsets.US_ASCII);
 
-        // handle status messages (CHOKE, UNCHOKE, INTERESTED, UNINTERESTED)
+        // Manejar mensajes de estatus  (CHOKE, UNCHOKE, INTERESTED, UNINTERESTED)
         if (len == 1) {
             if (typeStr.equals("0")) {
                 return new BitMessage(MessageType.CHOKE);
@@ -200,7 +199,7 @@ public class BitMessage {
             }
         }
 
-        // handle HAVE, BITFIELD, REQUEST, CANCEL, PIECE messages
+        // Manejo mensajes HAVE, BITFIELD, REQUEST, CANCEL, PIECE
         if (typeStr.equals("4")) {
             int pieceIndex = buf.getInt();
             return new BitMessage(MessageType.HAVE, pieceIndex);

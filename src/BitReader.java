@@ -1,6 +1,6 @@
-/* BitReader.java:  runnable class to read from a connected BitPeer */
-/* main purpose is to provide non-blocking reading of messages into messageQ */
-/* Christopher Chute */
+/* BitReader.java: clase ejecutable para leer desde un BitPeer conectado */
+/* El propósito principal es proporcionar lectura sin bloqueo de mensajes en messageQ */
+
 
 import java.nio.ByteBuffer;
 import java.io.InputStream;
@@ -28,7 +28,7 @@ public class BitReader implements Runnable {
     public void run() {
         byte[] lenBuf = new byte[INT_LEN];
         while (!isStopped) {
-            // read length of message
+            // Leer el tamaño del mensaje
             int numRead = 0;
             try {
                 numRead = inFromPeer.read(lenBuf, 0, INT_LEN);
@@ -38,19 +38,19 @@ public class BitReader implements Runnable {
             if (numRead != INT_LEN) {
                 throw new RuntimeException("error: reader thread misaligned");
             }
-            // NOTE: use ByteBuffer for integer encoding
+            // NOTA: usar ByteBuffer para codigicacion de enteros
             ByteBuffer buf = ByteBuffer.wrap(lenBuf);    
             int msgLen = buf.getInt();
 
-            // read rest of message
+            // leer el resto del mensaje
             byte[] rcvData = new byte[INT_LEN + msgLen];
             // (i) copy over the message length
             for (int i = 0; i < INT_LEN; ++i) {
                 rcvData[i] = lenBuf[i];
             }
-            // (ii) read rest of message from inFromPeer
+            // (ii) leer el resto del mensaje de inFromPeer
             try {
-                // continue reading until entire message is read
+                // continuar leyendo hasta que se lea el mensaje completo
                 for (numRead = 0; numRead < msgLen; ) {
                     numRead += inFromPeer.read(rcvData, INT_LEN + numRead, msgLen - numRead);
                 }
@@ -63,7 +63,7 @@ public class BitReader implements Runnable {
 
             BitMessage msg = BitMessage.unpack(rcvData);
 
-            // add message to the messageQ, wait if there's a backlog
+            // agregar mensaje al mensaje Q, espere si hay un retraso
             synchronized (messageQ) {
                 while (messageQ.size() >= MSG_BACKLOG) {
                     try {

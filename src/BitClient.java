@@ -1,5 +1,4 @@
-/* BitClient.java:  client for BitTorrent protocol */
-/* Christopher Chute */
+/* BitClient.java:  Cliente BitTorrent */
 
 import java.nio.file.*;
 import java.io.File;
@@ -20,8 +19,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-import util.bencode.*;        // interface for Bencoded objects
-import util.lib.BitLibrary;   // various library functions for BitTorrent
+import util.bencode.*;        // interface para objetos bencoded
+import util.lib.BitLibrary;   // Librerias con funciones del protocolo BitTorrent
 
 /* BitClient:  manages a BitTorrent connection session */
 public class BitClient {

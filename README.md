@@ -2,7 +2,9 @@
  Proyecto final Sistemas Distribuidos Programa
 
 Rosas Palacios Alan
+
 Enriquez Melendez Jesus
+
 Gamboa Del Angel Alan Eduardo
 
 Compilar: 

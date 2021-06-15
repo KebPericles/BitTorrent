@@ -1,5 +1,7 @@
 # BitTorrent
- Proyecto final Sistemas Distribuidos Programa
+ Proyecto final Sistemas Distribuidos 
+ 
+ Integrantes:
 
 Rosas Palacios Alan
 

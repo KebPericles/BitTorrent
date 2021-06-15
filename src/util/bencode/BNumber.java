@@ -1,5 +1,4 @@
 /* BNumber.java:  the BObject implementation of a Bencode integer */
-/* Christopher Chute */
 
 /* Reference: adapted from @frazboyz implementation on BitBucket */
 /* https://bitbucket.org/frazboyz/bencoder */

@@ -1,5 +1,4 @@
 /* BDict.java: the BObject implementation of a Bencode dictionary */
-/* Christopher Chute */
 
 /* Reference: adapted from @frazboyz implementation on BitBucket */
 /* https://bitbucket.org/frazboyz/bencoder */

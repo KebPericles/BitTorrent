@@ -1,5 +1,4 @@
 /* BObject.java:  interface for a decoded Bencode object */
-/* Christopher Chute */
 
 /* Reference: adapted from @frazboyz implementation on BitBucket */
 /* https://bitbucket.org/frazboyz/bencoder */

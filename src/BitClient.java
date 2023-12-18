@@ -19,41 +19,42 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-import util.bencode.*;        // interface para objetos bencoded
-import util.lib.BitLibrary;   // Librerias con funciones del protocolo BitTorrent
+import util.bencode.*; // interface para objetos bencoded
+import util.lib.BitLibrary; // Librerias con funciones del protocolo BitTorrent
 
 /* BitClient: Maneja una sesion de conexion Bittorrent */
 public class BitClient {
     private static final String TRNT_DIR = "./test/torrents/";
     private static final String DNLD_DIR = "./test/downloads/";
     private static final String UPLD_DIR = "./test/uploads/";
-    private static final int MAX_UNCHOKED = 4;         // Solo unchoke 4 a lq vez
-    private static final int SHA_LENGTH = 20;          // bytes en una SHA1 hash
-    private static final int INT_LEN = 4;              // bytes en un entero
-    private static boolean _DEBUG = false;             // Bandera debugging
-    private static String encoded;                     // Bencoded .torrent file
-    private static String infoBencoded;                // Bencoded info dict
-    private static int fileLength = -1;                // Tamaño del archivo completo
-    private static int pieceLength = -1;               // Tamaño de cada pieza
-    private static int numPieces = -1;                 // num. de piezas del archivo
-    private static Random random = null;               // Requerimiento por piezas random
-    private static boolean[] localBitfield = null;     // Piesas que tiene el cliente
-    private static String savePath = null;             // Locacion de guardado
-    private static RandomAccessFile file = null;       // Archivo a transferir
-    private static String[] pieces = null;             // SHA1 de piezas 
-    private static String trackerURL = null;           // URL del tracker
-    private static boolean isSeeder = false;           // El cliente tiene el archivo completo
-    private static boolean runSlowly = false;          // Ejecucion lenta para testing (-z slow)
-    private static int welcomePort = 6789;             // Puerto de bienvenida
-    private static BitWelcomer welcomer = null;        // Bienvenida a nuevos peers
-    private static LinkedList<Socket> welcomeQ = null; // Peers a la espera de conexion 
+    private static final int MAX_UNCHOKED = 4; // Solo unchoke 4 a lq vez
+    private static final int SHA_LENGTH = 20; // bytes en una SHA1 hash
+    private static final int INT_LEN = 4; // bytes en un entero
+    private static boolean _DEBUG = false; // Bandera debugging
+    private static String encoded; // Bencoded .torrent file
+    private static String infoBencoded; // Bencoded info dict
+    private static int fileLength = -1; // Tamaño del archivo completo
+    private static int pieceLength = -1; // Tamaño de cada pieza
+    private static int numPieces = -1; // num. de piezas del archivo
+    private static Random random = null; // Requerimiento por piezas random
+    private static boolean[] localBitfield = null; // Piesas que tiene el cliente
+    private static String savePath = null; // Locacion de guardado
+    private static RandomAccessFile file = null; // Archivo a transferir
+    private static String[] pieces = null; // SHA1 de piezas
+    private static String trackerURL = null; // URL del tracker
+    private static boolean isSeeder = false; // El cliente tiene el archivo completo
+    private static boolean runSlowly = false; // Ejecucion lenta para testing (-z slow)
+    private static int welcomePort = 6789; // Puerto de bienvenida
+    private static BitWelcomer welcomer = null; // Bienvenida a nuevos peers
+    private static LinkedList<Socket> welcomeQ = null; // Peers a la espera de conexion
     private static ArrayList<BitPeer> peerList = null; // Peers conectados
     private static int numUnchoked = -1;
 
     public static void main(String[] args) {
         ByteBuffer lenBuf = ByteBuffer.allocate(INT_LEN);
         BitMessage unchoke = new BitMessage(BitMessage.MessageType.UNCHOKE);
-        // obtener la configuración del cliente desde la línea de comandos, incluida peerList
+        // obtener la configuración del cliente desde la línea de comandos, incluida
+        // peerList
         if (parseArgs(args) == -1) {
             return;
         }
@@ -69,8 +70,8 @@ public class BitClient {
         logOutput("\t   FILE OF LENGTH " + fileLength);
         logOutput("\t   PCS. OF LENGTH " + pieceLength);
         logOutput("\t   INIT BITFIELD  " + BitLibrary.getBitString(localBitfield));
-        logOutput(BitLibrary.getTimeString() 
-                  + ": LISTENING ON PORT " + welcomePort);
+        logOutput(BitLibrary.getTimeString()
+                + ": LISTENING ON PORT " + welcomePort);
 
         // Abrir conexion y enviar handshakes a todos los peers
         Iterator<BitPeer> it = peerList.iterator();
@@ -82,7 +83,7 @@ public class BitClient {
             }
             peer.sendHandshake(infoBencoded);
             BitMessage bfmsg = new BitMessage(BitMessage.MessageType.BITFIELD,
-                                       BitLibrary.booleanToBits(localBitfield));
+                    BitLibrary.booleanToBits(localBitfield));
             sendMessage(peer, bfmsg);
             logOutput(BitLibrary.getTimeString() + ": HANDSHAKE INITIALIZED");
             peer.receiveHandshake(infoBencoded);
@@ -97,8 +98,7 @@ public class BitClient {
             }
             numUnchoked = peerList.size();
         } else {
-            Set<Integer> toUnchoke 
-                    = BitLibrary.getRandomSet(MAX_UNCHOKED, 0, peerList.size());
+            Set<Integer> toUnchoke = BitLibrary.getRandomSet(MAX_UNCHOKED, 0, peerList.size());
             for (Integer i : toUnchoke) {
                 sendMessage(peerList.get(i), unchoke);
                 peerList.get(i).remoteIsChoked = false;
@@ -112,8 +112,8 @@ public class BitClient {
                 // Evitar ocupado sin peers
                 while (welcomeQ.isEmpty() && peerList.isEmpty()) {
                     try {
-                        logOutput(BitLibrary.getTimeString() 
-                                  + ": WAITING FOR PEERS");
+                        logOutput(BitLibrary.getTimeString()
+                                + ": WAITING FOR PEERS");
                         welcomeQ.wait();
                     } catch (InterruptedException ex) {
                     }
@@ -122,20 +122,19 @@ public class BitClient {
                 while (!welcomeQ.isEmpty()) {
                     Socket peerSocket = welcomeQ.poll();
                     BitPeer peer = new BitPeer(peerSocket);
-                    
+
                     if (peer.receiveHandshake(infoBencoded) == 0) {
                         // agregar a peerList
                         logOutput(BitLibrary.getTimeString() + ": ADDED PEER AT "
-                                  + peer.getIP());
+                                + peer.getIP());
                         peerList.add(peer);
                         // completar handshake
                         peer.sendHandshake(infoBencoded);
-                        logOutput(BitLibrary.getTimeString() 
-                                  + ": COMPLETED HANDSHAKE WITH "+peer.getIP());
+                        logOutput(BitLibrary.getTimeString()
+                                + ": COMPLETED HANDSHAKE WITH " + peer.getIP());
                         // enviar bitfield
-                        BitMessage bitfieldMsg 
-                               = new BitMessage(BitMessage.MessageType.BITFIELD,
-                                       BitLibrary.booleanToBits(localBitfield));
+                        BitMessage bitfieldMsg = new BitMessage(BitMessage.MessageType.BITFIELD,
+                                BitLibrary.booleanToBits(localBitfield));
                         sendMessage(peer, bitfieldMsg);
                         // unchoke si hay lugares disponibles
                         if (numUnchoked < MAX_UNCHOKED) {
@@ -144,7 +143,7 @@ public class BitClient {
                             numUnchoked++;
                         }
                     }
-                    
+
                 }
             }
 
@@ -157,7 +156,7 @@ public class BitClient {
 
                 // analizar el tipo de mensaje y procesarlo en consecuencia
                 logOutput(BitLibrary.getTimeString() + ": RECEIVED MESSAGE TYPE "
-                                     + msg.getType() + " FROM " + peer.getIP());
+                        + msg.getType() + " FROM " + peer.getIP());
                 peer.updateLastUsed();
                 if (msg.getType() == BitMessage.MessageType.KEEP_ALIVE) {
                     // ya actualizado por última vez
@@ -175,14 +174,14 @@ public class BitClient {
                     peer.remoteIsInterested = false;
                 } else if (msg.getType() == BitMessage.MessageType.HAVE) {
                     peer.addToBitfield(msg.getIndex());
-                    logOutput(BitLibrary.getTimeString() 
-                              + ": PEER " + peer.getIP()
-                              + " HAS " 
-                              + BitLibrary.getBitString(peer.getBitfield()));
+                    logOutput(BitLibrary.getTimeString()
+                            + ": PEER " + peer.getIP()
+                            + " HAS "
+                            + BitLibrary.getBitString(peer.getBitfield()));
                     // di interested si no tenemos esta pieza
                     if (localBitfield[msg.getIndex()] == false) {
                         sendMessage(peer,
-                            new BitMessage(BitMessage.MessageType.INTERESTED));
+                                new BitMessage(BitMessage.MessageType.INTERESTED));
                     } else if (BitLibrary.isAllTrue(peer.getBitfield())) {
                         // hacer espacio para otros si el peer ahora es seeder
                         if (peer.remoteIsChoked == false) {
@@ -194,23 +193,23 @@ public class BitClient {
                 } else if (msg.getType() == BitMessage.MessageType.BITFIELD) {
                     boolean[] bf = BitLibrary.bitsToBoolean(msg.getBitfield(), numPieces);
                     peer.setBitfield(bf);
-                    logOutput(BitLibrary.getTimeString() 
-                              + ": PEER " + peer.getIP()
-                              + " HAS " 
-                              + BitLibrary.getBitString(peer.getBitfield()));
+                    logOutput(BitLibrary.getTimeString()
+                            + ": PEER " + peer.getIP()
+                            + " HAS "
+                            + BitLibrary.getBitString(peer.getBitfield()));
                 } else if (msg.getType() == BitMessage.MessageType.REQUEST) {
                     logDebug("REQUEST Message: Peer wants piece " + msg.getIndex());
                     if (peer.remoteIsChoked) {
                         logDebug("But peer is choked, not sending");
                     } else {
                         BitMessage reply = null;
-                        // Asegurar que el cliente tenga la pieza 
+                        // Asegurar que el cliente tenga la pieza
                         if (localBitfield[msg.getIndex()] == false) {
                             // el peer tiene incorrecta bitfield info, enviar otra
                             logDebug("warning: peer incorrectly thinks we have " + msg.getIndex());
                             reply = new BitMessage(BitMessage.MessageType.BITFIELD,
-                                           BitLibrary.booleanToBits(localBitfield));
-                        // leer esta pieza del archivo
+                                    BitLibrary.booleanToBits(localBitfield));
+                            // leer esta pieza del archivo
                         } else {
                             byte[] replyData = new byte[msg.getBlockLength()];
                             int numRead = 0;
@@ -222,13 +221,13 @@ public class BitClient {
                                 ex.printStackTrace();
                             }
                             reply = new BitMessage(BitMessage.MessageType.PIECE,
-                                        msg.getIndex(), msg.getBegin(), replyData);
+                                    msg.getIndex(), msg.getBegin(), replyData);
                         }
 
                         sendMessage(peer, reply);
-                        logOutput(BitLibrary.getTimeString() 
-                              + ": SENT PIECE " + msg.getIndex() 
-                              + " TO " + peer.getIP());
+                        logOutput(BitLibrary.getTimeString()
+                                + ": SENT PIECE " + msg.getIndex()
+                                + " TO " + peer.getIP());
                     }
                 } else if (msg.getType() == BitMessage.MessageType.PIECE) {
                     if (localBitfield[msg.getIndex()]) {
@@ -244,20 +243,19 @@ public class BitClient {
                     }
                     // actualizar bitfield, enviar HAVE respuesta a TODOS los peers
                     localBitfield[msg.getIndex()] = true;
-                    BitMessage haveMsg 
-                                   = new BitMessage(BitMessage.MessageType.HAVE,
-                                                    msg.getIndex());
+                    BitMessage haveMsg = new BitMessage(BitMessage.MessageType.HAVE,
+                            msg.getIndex());
                     for (BitPeer p : peerList) {
                         sendMessage(p, haveMsg);
                     }
                     logOutput(BitLibrary.getTimeString() + ": NOW HAVE "
-                                + BitLibrary.getBitString(localBitfield));
+                            + BitLibrary.getBitString(localBitfield));
 
-                    // Convertirse en un seeder si se ha descargado todo 
+                    // Convertirse en un seeder si se ha descargado todo
                     if (BitLibrary.isAllTrue(localBitfield)) {
                         logOutput(BitLibrary.getTimeString() + ": DOWNLOAD COMPLETE");
-                        logDebug("local bitfield " 
-                                 + BitLibrary.getBitString(localBitfield));
+                        logDebug("local bitfield "
+                                + BitLibrary.getBitString(localBitfield));
                         isSeeder = true;
                     }
                 } else if (msg.getType() == BitMessage.MessageType.CANCEL) {
@@ -268,35 +266,33 @@ public class BitClient {
             }
             // (ii): actualizar el estado de interesado
             for (BitPeer peer : peerList) {
-                if (!peer.localIsInterested 
-                    && peer.getRarePiece(localBitfield) > -1) {
+                if (!peer.localIsInterested
+                        && peer.getRarePiece(localBitfield) > -1) {
                     peer.localIsInterested = true;
-                    BitMessage msg 
-                            = new BitMessage(BitMessage.MessageType.INTERESTED);
+                    BitMessage msg = new BitMessage(BitMessage.MessageType.INTERESTED);
                     sendMessage(peer, msg);
                 }
             }
 
             // (iii): Pedir todas las piezas de los unchoked peers
-            if (!isSeeder) {    // falta al menos una pieza
+            if (!isSeeder) { // falta al menos una pieza
                 for (BitPeer peer : peerList) {
                     int index;
                     if (!peer.localIsChoked && peer.localIsInterested
-                        && (index = peer.getRarePiece(localBitfield)) > -1
-                        && !peer.outstandingRequests.contains(index)) {
+                            && (index = peer.getRarePiece(localBitfield)) > -1
+                            && !peer.outstandingRequests.contains(index)) {
                         int indexLength = pieceLength;
-                        if (index ==numPieces-1 && fileLength%pieceLength > 0) {
+                        if (index == numPieces - 1 && fileLength % pieceLength > 0) {
                             indexLength = fileLength % pieceLength;
                         }
-                        BitMessage request 
-                                = new BitMessage(BitMessage.MessageType.REQUEST,
-                                       index, index * pieceLength, indexLength);
+                        BitMessage request = new BitMessage(BitMessage.MessageType.REQUEST,
+                                index, index * pieceLength, indexLength);
                         peer.outstandingRequests.add(index);
                         sendMessage(peer, request);
                     }
                 }
             }
-            //insertar pausas para la depuración
+            // insertar pausas para la depuración
             if (runSlowly) {
                 try {
                     Thread.sleep(1000);
@@ -307,7 +303,7 @@ public class BitClient {
         }
     }
 
-    /* sendMessage:  enviar un BitMessage a un peer espesifico */
+    /* sendMessage: enviar un BitMessage a un peer espesifico */
     public static void sendMessage(BitPeer peer, BitMessage msg) {
         byte[] packedMsg = msg.pack();
         peer.write(packedMsg, 0, packedMsg.length);
@@ -315,19 +311,19 @@ public class BitClient {
         StringBuilder sb = new StringBuilder();
         sb.append(BitLibrary.getTimeString() + ": SENT " + msg.getType());
         if (msg.getType() == BitMessage.MessageType.REQUEST
-            || msg.getType() == BitMessage.MessageType.PIECE) {
+                || msg.getType() == BitMessage.MessageType.PIECE) {
             sb.append(" FOR " + msg.getIndex());
         }
         sb.append(" TO " + peer.getIP());
         logOutput(sb.toString());
     }
 
-    /* parseArgs:crear guardar archivo para escribir, obtener metadata torrent   */
+    /* parseArgs:crear guardar archivo para escribir, obtener metadata torrent */
     /* return -1 si falla y 0 otro caso */
     public static int parseArgs(String[] args) {
         peerList = new ArrayList<BitPeer>();
-        if (args.length == 0 || args.length % 2 == 0 
-            || BitLibrary.hasStr(args, "-h")) {
+        if (args.length == 0 || args.length % 2 == 0
+                || BitLibrary.hasStr(args, "-h")) {
             logError("Uso: java BitClient [FLAGS]* torrentFile");
             logError("\t-h         \t Desplegar información");
             logError("\t-s saveFile\t Espesificar locación");
@@ -341,36 +337,36 @@ public class BitClient {
 
         for (int i = 0; i < args.length - 1; i += 2) {
             if (args[i].equals("-s")) {
-                savePath = args[i+1];
+                savePath = args[i + 1];
             } else if (args[i].equals("-p")) {
                 // agregar peers a la lista
                 InetAddress peerAddr = null;
                 int peerPort = 0;
                 try {
-                    int delimPos = args[i+1].indexOf(':', 0);
-                    String ipString = args[i+1].substring(0, delimPos);
-                    String portString = args[i+1].substring(delimPos + 1);
+                    int delimPos = args[i + 1].indexOf(':', 0);
+                    String ipString = args[i + 1].substring(0, delimPos);
+                    String portString = args[i + 1].substring(delimPos + 1);
 
                     peerAddr = InetAddress.getByName(ipString);
                     peerPort = Integer.parseInt(portString);
                     peerList.add(new BitPeer(peerAddr, peerPort));
-                } catch (UnknownHostException|NumberFormatException ex) {
-                    logError("error: unknown IP:port " + args[i+1]);
+                } catch (UnknownHostException | NumberFormatException ex) {
+                    logError("error: unknown IP:port " + args[i + 1]);
                     return -1;
                 }
-                logDebug("Added Peer: IP = " + peerAddr + ", " 
-                         + "Port = " + peerPort);
+                logDebug("Added Peer: IP = " + peerAddr + ", "
+                        + "Port = " + peerPort);
             } else if (args[i].equals("-v")) {
-                if (args[i+1].equals("on")) {
+                if (args[i + 1].equals("on")) {
                     _DEBUG = true;
                 } else {
                     _DEBUG = false;
                 }
             } else if (args[i].equals("-w")) {
                 try {
-                    welcomePort = Integer.parseInt(args[i+1]);
+                    welcomePort = Integer.parseInt(args[i + 1]);
                 } catch (NumberFormatException ex) {
-                    logError("error: invalid welcome port " + args[i+1]);
+                    logError("error: invalid welcome port " + args[i + 1]);
                     return -1;
                 }
             } else if (args[i].equals("-x")) {
@@ -380,10 +376,10 @@ public class BitClient {
                 runSlowly = true;
             }
         }
-        /* Leer informacion del torrent*/
+        /* Leer informacion del torrent */
         try {
-            String torrentName = TRNT_DIR + args[args.length - 1];
-            byte[] torrentData = Files.readAllBytes(Paths.get(torrentName));
+            String torrentPath = TRNT_DIR + args[args.length - 1];
+            byte[] torrentData = Files.readAllBytes(Paths.get(torrentPath));
             encoded = new String(torrentData, "US-ASCII");
             encoded = encoded.trim();
         } catch (IOException ex) {
@@ -394,15 +390,16 @@ public class BitClient {
         return 0;
     }
 
-    /* initClient:analizar los metadatos del archivo de  METAINFO */
+    /* initClient:analizar los metadatos del archivo de METAINFO */
     /* return: 0 exito, -1 fallo */
     /* success ==> initialized: fileLength, pieceLength, saveBuf, pieces */
     public static int initClient() {
         BObject[] metainfo = BDecoder.read(encoded);
-        if (metainfo.length != 1) {
+        if (metainfo.length != 1 || !(metainfo[0] instanceof BDict)) {
             logError("error: invalid .torrent file");
             return -1;
         }
+
         BDict metaDict = (BDict) metainfo[0];
         // (a) analizar el diccionario de información dentro de metaDict
         if (metaDict.containsKey("info")) {
@@ -432,9 +429,10 @@ public class BitClient {
             }
             logDebug("got numPieces " + numPieces);
 
-            // (iii) campo de nombre de guardado sugerido ==> guardar en DNLD_DIR / <sug_name>
+            // (iii) campo de nombre de guardado sugerido ==> guardar en DNLD_DIR /
+            // <sug_name>
             BObject sname = infoDict.get("name");
-            if (sname != null && savePath == null) {    // -s flag sin usar
+            if (sname != null && savePath == null) { // -s flag sin usar
                 savePath = DNLD_DIR + sname.print();
                 logDebug("got savePath " + savePath);
             }
@@ -450,11 +448,11 @@ public class BitClient {
                 logError("error: SHA1 length not divisible by 20");
                 return -1;
             } else {
-                //dividir los hash SHA1 en arrayList
+                // dividir los hash SHA1 en arrayList
                 pieces = new String[piecesSHA1.length() / SHA_LENGTH];
                 for (int i = 0; i < pieces.length; ++i) {
-                    String s = piecesSHA1.substring(SHA_LENGTH * i, 
-                                                    SHA_LENGTH * (i + 1));
+                    String s = piecesSHA1.substring(SHA_LENGTH * i,
+                            SHA_LENGTH * (i + 1));
                     byte[] hashData;
                     try {
                         hashData = s.getBytes("UTF-8");
@@ -480,7 +478,7 @@ public class BitClient {
                 logDebug("I AM A SEEDER");
             }
             for (int i = 0; i < localBitfield.length; ++i) {
-                localBitfield[i] = isSeeder;   // todo true seeder, else false
+                localBitfield[i] = isSeeder; // todo true seeder, else false
             }
         } else {
             logError("error: no info field specified in .torrent file");
@@ -494,7 +492,7 @@ public class BitClient {
         logDebug("got tracker URL " + trackerURL);
         // (c) initializar archivo torrent para leer/escribir
         if (savePath == null) {
-            logError("error: no save location specified");  // .torrent no CLI
+            logError("error: no save location specified"); // .torrent no CLI
             return -1;
         }
         if (isSeeder) {
@@ -528,7 +526,7 @@ public class BitClient {
                 return -1;
             }
         }
-            
+
         // (d) configurar hilo de bienvenida
         welcomeQ = new LinkedList<Socket>();
         welcomer = new BitWelcomer(welcomePort, welcomeQ);

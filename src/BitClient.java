@@ -31,6 +31,9 @@ public class BitClient {
     private static final int SHA_LENGTH = 20; // bytes en una SHA1 hash
     private static final int INT_LEN = 4; // bytes en un entero
     private static boolean _DEBUG = false; // Bandera debugging
+    /***
+     * RUTA DEL ARCHIVO .TORRENT
+     */
     private static String encoded; // Bencoded .torrent file
     private static String infoBencoded; // Bencoded info dict
     private static int fileLength = -1; // Tamaño del archivo completo
@@ -42,6 +45,8 @@ public class BitClient {
     private static RandomAccessFile file = null; // Archivo a transferir
     private static String[] pieces = null; // SHA1 de piezas
     private static String trackerURL = null; // URL del tracker
+
+    //todo Actualizarlo para que sea uno por cada archivo
     private static boolean isSeeder = false; // El cliente tiene el archivo completo
     private static boolean runSlowly = false; // Ejecucion lenta para testing (-z slow)
     private static int welcomePort = 6789; // Puerto de bienvenida
@@ -400,90 +405,94 @@ public class BitClient {
             return -1;
         }
 
+        
         BDict metaDict = (BDict) metainfo[0];
         // (a) analizar el diccionario de información dentro de metaDict
-        if (metaDict.containsKey("info")) {
-            BDict infoDict = (BDict) metaDict.get("info");
-            infoBencoded = infoDict.encode();
-
-            // (i) campo de longitud
-            BObject len = infoDict.get("length");
-            if (len == null) {
-                logError("error: invalid length in .torrent file");
-                return -1;
-            }
-            fileLength = Integer.parseInt(len.print());
-            logDebug("got fileLength " + fileLength);
-
-            // (ii) Longitud pieza campo
-            BObject plen = infoDict.get("piece length");
-            if (plen == null) {
-                logError("error: invalid piece length in .torrent file");
-                return -1;
-            }
-            pieceLength = Integer.parseInt(plen.print());
-            logDebug("got pieceLength " + pieceLength);
-            numPieces = fileLength / pieceLength;
-            if (fileLength % pieceLength > 0) {
-                ++numPieces;
-            }
-            logDebug("got numPieces " + numPieces);
-
-            // (iii) campo de nombre de guardado sugerido ==> guardar en DNLD_DIR /
-            // <sug_name>
-            BObject sname = infoDict.get("name");
-            if (sname != null && savePath == null) { // -s flag sin usar
-                savePath = DNLD_DIR + sname.print();
-                logDebug("got savePath " + savePath);
-            }
-
-            // (iv) SHA1 valores de las piezas
-            BObject sha = infoDict.get("pieces");
-            if (sha == null) {
-                logError("error: invalid SHA1 encoding of pieces");
-                return -1;
-            }
-            String piecesSHA1 = sha.print();
-            if (piecesSHA1.length() % SHA_LENGTH != 0) {
-                logError("error: SHA1 length not divisible by 20");
-                return -1;
-            } else {
-                // dividir los hash SHA1 en arrayList
-                pieces = new String[piecesSHA1.length() / SHA_LENGTH];
-                for (int i = 0; i < pieces.length; ++i) {
-                    String s = piecesSHA1.substring(SHA_LENGTH * i,
-                            SHA_LENGTH * (i + 1));
-                    byte[] hashData;
-                    try {
-                        hashData = s.getBytes("UTF-8");
-                    } catch (UnsupportedEncodingException ex) {
-                        ex.printStackTrace();
-                        return -1;
-                    }
-                    pieces[i] = BitLibrary.bytesToHex(hashData);
-                }
-                if (_DEBUG) {
-                    logDebug("Got the following SHA1 pieces:");
-                    if (_DEBUG) {
-                        for (int i = 0; i < pieces.length; ++i) {
-                            logDebug(pieces[i]);
-                        }
-                    }
-                }
-            }
-
-            // (v) bitfield
-            localBitfield = new boolean[numPieces];
-            if (isSeeder) {
-                logDebug("I AM A SEEDER");
-            }
-            for (int i = 0; i < localBitfield.length; ++i) {
-                localBitfield[i] = isSeeder; // todo true seeder, else false
-            }
-        } else {
+        if (!metaDict.containsKey("info")) {
             logError("error: no info field specified in .torrent file");
             return -1;
         }
+
+        // obtener diccionario de información
+        BDict infoDict = (BDict) metaDict.get("info");
+        infoBencoded = infoDict.encode();
+
+        // (i) Longitud del archivo
+        BObject len = infoDict.get("length");
+        if (len == null) {
+            logError("error: invalid length in .torrent file");
+            return -1;
+        }
+        fileLength = Integer.parseInt(len.print());
+        logDebug("got fileLength " + fileLength);
+
+        // (ii) Longitud pieza
+        BObject plen = infoDict.get("piece length");
+        if (plen == null) {
+            logError("error: invalid piece length in .torrent file");
+            return -1;
+        }
+        pieceLength = Integer.parseInt(plen.print());
+        logDebug("got pieceLength " + pieceLength);
+        numPieces = fileLength / pieceLength;
+        if (fileLength % pieceLength > 0) {
+            ++numPieces;
+        }
+        logDebug("got numPieces " + numPieces);
+
+        // (iii) campo de nombre de guardado sugerido ==> guardar en DNLD_DIR /
+        // <sug_name>
+        BObject sname = infoDict.get("name");
+        if (sname != null && savePath == null) { // -s flag sin usar
+            savePath = DNLD_DIR + sname.print();
+            logDebug("got savePath " + savePath);
+        }
+
+        // (iv) SHA1 valores de las piezas
+        BObject sha = infoDict.get("pieces");
+        if (sha == null) {
+            logError("error: invalid SHA1 encoding of pieces");
+            return -1;
+        }
+        String piecesSHA1 = sha.print();
+        if (piecesSHA1.length() % SHA_LENGTH != 0) {
+            logError("error: SHA1 length not divisible by 20");
+            return -1;
+        } else {
+            // dividir los hash SHA1 en arrayList
+            pieces = new String[piecesSHA1.length() / SHA_LENGTH];
+            for (int i = 0; i < pieces.length; ++i) {
+                String s = piecesSHA1.substring(SHA_LENGTH * i,
+                        SHA_LENGTH * (i + 1));
+                byte[] hashData;
+                try {
+                    hashData = s.getBytes("UTF-8");
+                } catch (UnsupportedEncodingException ex) {
+                    ex.printStackTrace();
+                    return -1;
+                }
+                pieces[i] = BitLibrary.bytesToHex(hashData);
+            }
+            if (_DEBUG) {
+                logDebug("Got the following SHA1 pieces:");
+                if (_DEBUG) {
+                    for (int i = 0; i < pieces.length; ++i) {
+                        logDebug(pieces[i]);
+                    }
+                }
+            }
+        }
+
+        // TODO: MODIFICAR PARA QUE SEA AUTOMATICO PARA CADA ARCHIVO
+        // (v) bitfield
+        localBitfield = new boolean[numPieces];
+        if (isSeeder) {
+            logDebug("I AM A SEEDER");
+        }
+        for (int i = 0; i < localBitfield.length; ++i) {
+            localBitfield[i] = isSeeder; // todo true seeder, else false
+        }
+
         // (b) obtener tracker URL
         BObject tracker = metaDict.get("announce");
         if (tracker != null) {

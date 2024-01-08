@@ -8,10 +8,28 @@ public class BitMessage {
     /* Unpacked Message: información sobre el contenido de la carga útil del mensaje*/
     private MessageType type;      // tipo de BitMessage, cf. protocolo de cliente
     private int blockLength = -1;  // longitud de un bloque solicitado
-    private int index = -1;        // índice de pieza que contiene el bloque solicitado
-    private int begin = -1;        // desplazamiento dentro de una pieza de un bloque solicitado
-    private byte[] block = null;   // bloque de datos en sí, subconjunto contiguo de una pieza
-    private byte[] bitfield = null;// para mensaje de campo de bits
+
+    /**
+     * Índice de pieza que contiene el bloque solicitado
+     */
+    private int index = -1;
+
+    /**
+     * Desplazamiento dentro de una pieza de un bloque solicitado
+     */
+    private int begin = -1;
+
+    /**
+     * Datos de bloque solicitados
+     * 
+     * bloque de datos en sí, subconjunto contiguo de una pieza
+     */
+    private byte[] block = null;
+
+    /**
+     * Para mensajes de campo de bits
+     */
+    private byte[] bitfield = null;
 
     /* MessageType: todos los tipos de mensajes posibles en el protocolo del cliente */
     public enum MessageType {

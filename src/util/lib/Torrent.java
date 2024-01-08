@@ -20,6 +20,8 @@ import java.util.TreeMap;
  * @see: https://stackoverflow.com/questions/2032876/how-can-i-generate-a-torrent-in-java
  */
 public class Torrent {
+        public static final int SHA1_HASH_SIZE = 20;
+
         private static void encodeObject(Object o, OutputStream out) throws IOException {
                 if (o instanceof String)
                         encodeString((String) o, out);

@@ -21,6 +21,7 @@ import java.util.TreeMap;
  */
 public class Torrent {
         public static final int SHA1_HASH_SIZE = 20;
+        public static final int PIECE_LENGTH = 512 * 1024;
 
         private static void encodeObject(Object o, OutputStream out) throws IOException {
                 if (o instanceof String)
@@ -89,12 +90,11 @@ public class Torrent {
         }
 
         public static void createTorrent(File file, File sharedFile, String announceURL) throws IOException {
-                final int pieceLength = 512 * 1024;
                 Map<String, Object> info = new HashMap<>();
                 info.put("name", sharedFile.getName());
                 info.put("length", sharedFile.length());
-                info.put("piece length", pieceLength);
-                info.put("pieces", hashPieces(sharedFile, pieceLength));
+                info.put("piece length", PIECE_LENGTH);
+                info.put("pieces", hashPieces(sharedFile, PIECE_LENGTH));
                 Map<String, Object> metainfo = new HashMap<String, Object>();
                 metainfo.put("announce", announceURL);
                 metainfo.put("info", info);

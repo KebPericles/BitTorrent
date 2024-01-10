@@ -1,4 +1,4 @@
-package tracker;
+package serverTracker;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;

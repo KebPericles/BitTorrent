@@ -17,6 +17,15 @@ public class PeerInfo implements Serializable {
                 this.archivosCompartidos = archivosCompartidos;
         }
 
+        public TorrentInfo getTorrentInfo(String nombre) {
+                for (TorrentInfo torrentInfo : archivosCompartidos) {
+                        if (torrentInfo.getName().equals(nombre)) {
+                                return torrentInfo;
+                        }
+                }
+                return null;
+        }
+
         public String getIp() {
                 return ip;
         }

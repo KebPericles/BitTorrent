@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import serverTracker.Config;
 import v2.PeerInfo;
 
 public class Tracker<T extends TrackerHandler> {
@@ -51,6 +52,20 @@ public class Tracker<T extends TrackerHandler> {
                         TrackerHandler handlerInstance = this.handlerConstructor.newInstance(socket);
                         executor.execute(handlerInstance);
                 }
+        }
+
+        // Método para agregar un peer a la lista de peers
+        public void addPeer(PeerInfo peer) {
+                peers.add(peer);
+        }
+
+        // Método para obtener la lista de peers
+        public List<PeerInfo> getPeers() {
+                return peers;
+        }
+
+        public void updatePeer(PeerInfo peer) {
+                // TODO
         }
 
         public static void main(String[] args) throws InstantiationException, IllegalAccessException,

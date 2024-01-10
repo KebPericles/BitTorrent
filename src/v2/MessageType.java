@@ -13,6 +13,7 @@ public enum MessageType {
         // PEER
         // -----------------------------//
         ANNOUNCE_STATUS(1),
+        UPDATE_STATUS(2),
         REQUEST_PIECE(6),
         REPLY_START_PIECE(7),
         REPLY_END_PIECE(8);

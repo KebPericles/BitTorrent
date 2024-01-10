@@ -7,11 +7,6 @@ El tracker responde con la lista de peers que están en la red
 
 - PEER_LIST
 
-Y anuncia a los peers que el peer se ha unido a la red y sobre que archivos
-tiene
-
-- NOTIFY_PEER_ONLINE
-
 A partir de aquí el peer puede pedir trozos de archivos a los peers que los
 tienen
 

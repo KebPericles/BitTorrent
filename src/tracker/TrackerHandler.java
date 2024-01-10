@@ -12,6 +12,7 @@ public abstract class TrackerHandler implements Runnable, Closeable {
         protected Socket socket;
         protected InputStream inputStream;
         protected OutputStream outputStream;
+        protected Tracker tracker;
 
         // No se inicializan los flujos de objetos porque no se sabe si se van a
         // utilizar, depende de la implementación de cada clase hija, además, si se
@@ -20,8 +21,9 @@ public abstract class TrackerHandler implements Runnable, Closeable {
         protected ObjectInputStream objectInputStream;
         protected ObjectOutputStream objectOutputStream;
 
-        protected TrackerHandler(Socket socket) {
+        protected TrackerHandler(Socket socket, Tracker tracker) {
                 this.socket = socket;
+                this.tracker = tracker;
                 try {
                         this.inputStream = socket.getInputStream();
                         this.outputStream = socket.getOutputStream();

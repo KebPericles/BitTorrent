@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
 
-public class TestTracker {
+public class TestServerSocket {
 
         public static void main(String[] args) throws IOException, InterruptedException {
 

@@ -1,6 +1,11 @@
 package v2;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,12 +33,36 @@ public class TorrentInfo implements Serializable {
         private int pieceLength;
         private String[] pieces;
 
+        // ----------------------------------------
+        // Constructores y factory
+        // ----------------------------------------
         public TorrentInfo(String tracker, String name, int length, int pieceLength, String[] pieces) {
                 this.tracker = tracker;
                 this.name = name;
                 this.length = length;
                 this.pieceLength = pieceLength;
                 this.pieces = pieces;
+        }
+
+        public static TorrentInfo[] deserializeDownloadTorrents() {
+                File dir = new File(Config.DIR_TORRENTS());
+                File[] files = dir.listFiles();
+                if (files == null) {
+                        return new TorrentInfo[0];
+                }
+
+                files = Arrays.stream(files).filter(f -> f.getName().endsWith(".ser")).toArray(File[]::new);
+
+                TorrentInfo[] torrents = new TorrentInfo[files.length];
+                for (int i = 0; i < files.length; ++i) {
+                        try (FileInputStream fileIn = new FileInputStream(files[i])) {
+                                torrents[i] = (TorrentInfo) new ObjectInputStream(fileIn).readObject();
+                        } catch (IOException | ClassNotFoundException e) {
+                                System.err.println("Error al leer el archivo: " + e.getMessage());
+                        }
+                }
+
+                return torrents;
         }
 
         /**
@@ -44,7 +73,7 @@ public class TorrentInfo implements Serializable {
          */
         public static TorrentInfo fromFile(String path) {
                 BObject[] metainfo;
-                TorrentInfo torrentInfo = new TorrentInfo("", path, 0, 0, null);
+                TorrentInfo torrentInfo = new TorrentInfo("", "", 0, 0, null);
 
                 /* Leer y parsear a BObject informacion del .torrent */
                 try {
@@ -83,6 +112,94 @@ public class TorrentInfo implements Serializable {
                 return torrentInfo;
         }
 
+        public static void toFile(TorrentInfo torrentInfo) {
+                // ? checar si es necesario implementar este método
+
+                // ? esta es una opción para guardar el objeto TorrentInfo en un archivo
+                // ? pero puede no ser la mejor opción, ya que el archivo no queda como un
+                // ? .torrent y se tendría que implementar un método para leer el archivo
+                // ? y crear un objeto TorrentInfo a partir de él, además de considerarlo
+                // ? para los archivos en descarga
+
+                // Implementar el código para guardar el objeto TorrentInfo en un archivo
+
+                // Aquí puedes usar la clase ObjectOutputStream para escribir el objeto en un
+                // archivo
+                // y la clase FileOutputStream para crear el flujo de salida hacia el archivo.
+                // Por ejemplo:
+                try (FileOutputStream fileOut = new FileOutputStream(
+                                Config.DIR_TORRENTS() + torrentInfo.getName() + ".ser")) {
+
+                        ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
+                        objectOut.writeObject(torrentInfo);
+                        objectOut.close();
+
+                } catch (IOException e) {
+                        System.err.println("Error al guardar el objeto TorrentInfo en el archivo: " + e.getMessage());
+                }
+        }
+
+        // ----------------------------------------
+        // Métodos
+        // ----------------------------------------
+        public static File getLocalTorrentFile(String name) {
+                if (name == null || name.isEmpty()) {
+                        return null;
+                }
+
+                return new File(Config.DIR_TORRENTS() + name + ".torrent");
+        }
+
+        public static File getLocalFile(TorrentInfo torrentInfo) {
+                if (torrentInfo == null || torrentInfo.getName() == null) {
+                        return null;
+                }
+
+                return new File(Config.DIR_PRINCIPAL() + torrentInfo.getName());
+        }
+
+        public static boolean validateLocalExistence(TorrentInfo torrentInfo) {
+                File file = getLocalFile(torrentInfo);
+                return file.exists();
+        }
+
+        /**
+         * Devuelve los bytes de la pieza desde el archivo principal tomando en cuenta
+         * el desplazamiento
+         * 
+         * @param piece
+         * @return
+         */
+        public static byte[] getPieceData(PieceInfo piece) {
+                if (piece == null) {
+                        return new byte[0];
+                }
+
+                TorrentInfo torrentInfo = piece.getTorrentInfo();
+                int pieceIndex = piece.getIndex();
+                int pieceBegin = piece.getBegin();
+                int offset = pieceIndex * torrentInfo.getPieceLength() + pieceBegin;
+
+                File file = new File(
+                                Config.DIR_PRINCIPAL() + torrentInfo.getName());
+                if (!file.exists()) {
+                        return new byte[0];
+                }
+
+                byte[] pieceData = new byte[piece.getPieceLength()];
+                try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                        fileInputStream.skip(offset);
+                        fileInputStream.read(pieceData);
+                } catch (IOException e) {
+                        e.printStackTrace();
+                }
+
+                return pieceData;
+        }
+
+        // ----------------------------------------
+        // Métodos privados para parsear el .torrent
+        // ----------------------------------------
         /**
          * Validates the metainfo of a .torrent file.
          * 
@@ -174,18 +291,15 @@ public class TorrentInfo implements Serializable {
 
                 if (Config._DEBUG) {
                         logDebug("Got the following SHA1 pieces:");
-                        if (Config._DEBUG) {
-                                for (int i = 0; i < torrentInfo.getPieces().length; ++i) {
-                                        logDebug(torrentInfo.getPieces()[i]);
-                                }
+                        for (int i = 0; i < torrentInfo.getPieces().length; ++i) {
+                                logDebug(torrentInfo.getPieces()[i]);
                         }
                 }
         }
 
-        public String toString() {
-                return "Tracker: " + tracker + "\n" + "Name: " + name + "\n" + "Length: " + length + "\n"
-                                + "PieceLength: " + pieceLength + "\n" + "Pieces: " + Arrays.toString(pieces) + "\n";
-        }
+        // ----------------------------------------
+        // Getters y Setters
+        // ----------------------------------------
 
         public String getTracker() {
                 return tracker;
@@ -231,6 +345,20 @@ public class TorrentInfo implements Serializable {
                 if (Config._DEBUG) {
                         System.err.println(str);
                 }
+        }
+
+        // ----------------------------------------
+        // Métodos sobreescritos
+        // ----------------------------------------
+
+        @Override
+        public String toString() {
+                return "Name: " + name;
+        }
+
+        public String toFullString() {
+                return "Tracker: " + tracker + "\n" + "Name: " + name + "\n" + "Length: " + length + "\n"
+                                + "PieceLength: " + pieceLength + "\n" + "Pieces: " + Arrays.toString(pieces) + "\n";
         }
 
         @Override

@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-
 /***
  * Torrent.java: generador del archivo .torrent
+ * 
  * @see: https://stackoverflow.com/questions/2032876/how-can-i-generate-a-torrent-in-java
  */
 public class Torrent {
@@ -27,7 +27,7 @@ public class Torrent {
                 if (o instanceof String)
                         encodeString((String) o, out);
                 else if (o instanceof Map)
-                        encodeMap((Map) o, out);
+                        encodeMap((Map<String, ?>) o, out);
                 else if (o instanceof byte[])
                         encodeBytes((byte[]) o, out);
                 else if (o instanceof Number)
@@ -52,15 +52,25 @@ public class Torrent {
                 encodeBytes(str.getBytes("UTF-8"), out);
         }
 
-        private static void encodeMap(Map<String, Object> map, OutputStream out) throws IOException {
+        private static void encodeMap(Map<String, ?> map, OutputStream out) throws IOException {
                 // Sort the map. A generic encoder should sort by key bytes
-                SortedMap<String, Object> sortedMap = new TreeMap<String, Object>(map);
+                SortedMap<String, Object> sortedMap = new TreeMap<>(map);
                 out.write('d');
                 for (Map.Entry<String, Object> e : sortedMap.entrySet()) {
                         encodeString(e.getKey(), out);
                         encodeObject(e.getValue(), out);
                 }
                 out.write('e');
+        }
+
+        public static byte[] hash(byte[] bytes) {
+                MessageDigest sha1;
+                try {
+                        sha1 = MessageDigest.getInstance("SHA");
+                } catch (NoSuchAlgorithmException e) {
+                        throw new Error("SHA1 not supported");
+                }
+                return sha1.digest(bytes);
         }
 
         private static byte[] hashPieces(File file, int pieceLength) throws IOException {
@@ -89,17 +99,20 @@ public class Torrent {
                 return pieces.toByteArray();
         }
 
-        public static void createTorrent(File file, File sharedFile, String announceURL) throws IOException {
+        public static void createTorrent(File outTorrentFile, File inputFile, String announceURL) throws IOException {
                 Map<String, Object> info = new HashMap<>();
-                info.put("name", sharedFile.getName());
-                info.put("length", sharedFile.length());
+                info.put("name", inputFile.getName());
+                info.put("length", inputFile.length());
                 info.put("piece length", PIECE_LENGTH);
-                info.put("pieces", hashPieces(sharedFile, PIECE_LENGTH));
-                Map<String, Object> metainfo = new HashMap<String, Object>();
+                info.put("pieces", hashPieces(inputFile, PIECE_LENGTH));
+                Map<String, Object> metainfo = new HashMap<>();
                 metainfo.put("announce", announceURL);
                 metainfo.put("info", info);
-                OutputStream out = new FileOutputStream(file);
+                OutputStream out = new FileOutputStream(outTorrentFile);
                 encodeMap(metainfo, out);
                 out.close();
+        }
+
+        private Torrent() {
         }
 }

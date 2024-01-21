@@ -11,7 +11,6 @@ import java.nio.channels.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashSet;
@@ -19,7 +18,7 @@ import java.util.Random;
 import java.util.Set;
 
 public class BitLibrary {
-    /* getRandomSet:  returns an array of n (or hi - lo, whichever is smaller) */
+    /* getRandomSet:  reurns an array of n (or hi - lo, whichever is smaller) */
     /* random integers from the range [lo, hi) */
     public static Set<Integer> getRandomSet(int n, int lo, int hi) {
         Random random = new Random(System.currentTimeMillis());

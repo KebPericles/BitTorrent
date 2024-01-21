@@ -31,7 +31,7 @@ public class Validator {
                                 InetAddress.getByName(ip);
                                 break;
                         } catch (UnknownHostException e) {
-                                System.out.println("La IP ingresada no es válida");
+                                System.out.println("La IP ingresada no es valida");
                                 System.out.println("Ingrese la IP del tracker: ");
                                 ip = System.console().readLine();
                         }
@@ -62,7 +62,7 @@ public class Validator {
                                         break;
                                 }
                         } catch (NumberFormatException e) {
-                                System.out.println("Puerto inválido");
+                                System.out.println("Puerto invalido");
                                 System.out.println("Ingrese el puerto: ");
                                 port = Integer.parseInt(System.console().readLine());
                         }
